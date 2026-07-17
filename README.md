@@ -11,6 +11,15 @@ Install the base environment for organizer CLIP search:
 uv sync
 ```
 
+Install every optional dependency for a full builder machine:
+
+```bash
+uv sync --all-extras
+```
+
+This installs Python packages only. It does not download model checkpoints,
+organizer data, or shared search artifacts.
+
 Install an optional extra only when using that feature:
 
 ```bash
@@ -21,6 +30,11 @@ uv sync --extra app    # Gradio search interface
 ```
 
 `--extra asr` is not required to search an existing `asr.sqlite` database.
+Teammates who only use the Gradio interface with shared artifacts need:
+
+```bash
+uv sync --extra app
+```
 
 ## 2. Prepare Search Data
 

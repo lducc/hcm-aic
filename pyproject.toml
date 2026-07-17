@@ -24,7 +24,7 @@ beit3 = [
   "torchscale",
   "transformers<5",
 ]
-asr = ["chunkformer"]
+asr = ["chunkformer", "numba>=0.59"]
 query = ["google-genai", "pydantic", "python-dotenv"]
 app = ["gradio"]
 
