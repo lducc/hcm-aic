@@ -26,6 +26,7 @@ beit3 = [
 ]
 asr = ["chunkformer"]
 query = ["google-genai", "pydantic", "python-dotenv"]
+app = ["gradio"]
 
 [project.scripts]
 aic = "aic.cli:main"

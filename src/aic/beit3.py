@@ -1,6 +1,7 @@
 import csv
 import os
 import sys
+from functools import lru_cache
 from pathlib import Path
 
 import faiss
@@ -11,6 +12,7 @@ from torchvision import transforms
 from transformers import XLMRobertaTokenizer
 
 
+@lru_cache
 def load_beit3(device):
     sys.path.insert(0, os.environ["AIC_BEIT3_HOME"])
     import modeling_finetune

@@ -10,6 +10,7 @@ def main():
     parser = argparse.ArgumentParser()
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("build")
+    commands.add_parser("app")
     search_parser = commands.add_parser("search")
     search_parser.add_argument("query")
     search_parser.add_argument("--top-k", type=int, default=20)
@@ -21,6 +22,12 @@ def main():
 
     if args.command == "build":
         build(root)
+        return
+
+    if args.command == "app":
+        from aic.app import main as run_app
+
+        run_app(root)
         return
 
     visual_queries = None

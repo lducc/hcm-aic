@@ -17,6 +17,7 @@ Install an optional extra only when using that feature:
 uv sync --extra beit3  # BEiT-3 query encoder
 uv sync --extra query  # Gemini query enhancement
 uv sync --extra asr    # ChunkFormer transcription worker
+uv sync --extra app    # Gradio search interface
 ```
 
 `--extra asr` is not required to search an existing `asr.sqlite` database.
@@ -146,7 +147,20 @@ uv run --env-file .env aic search "Tìm cảnh đua xe đạp từ trên cao" --
 The command prints three English visual rewrites for CLIP and BEiT-3. ASR always
 receives the original query.
 
-## 5. Run Colab Workers
+## 5. Run the Search UI
+
+Install the app extra, then start the local Gradio interface:
+
+```bash
+uv sync --extra app
+uv run aic app
+```
+
+The interface reuses the CLI search function. It keeps loaded visual models in
+memory while it runs, shows keyframes when local paths are available, and lists
+the video ID, timestamp, modalities, and fused score for every result.
+
+## 6. Run Colab Workers
 
 Use separate GPU Colab runtimes for visual embeddings and ASR. Both notebooks mount
 Drive, download organizer archives to `/content/work`, process one archive at a time,

@@ -1,5 +1,6 @@
 import csv
 import os
+from functools import lru_cache
 from pathlib import Path
 
 import faiss
@@ -8,13 +9,19 @@ import open_clip
 import torch
 
 
-def clip_results(root, queries, top_k):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+@lru_cache
+def load_clip(device):
     model, _, _ = open_clip.create_model_and_transforms(
         "ViT-B-32-quickgelu", pretrained="openai"
     )
     model = model.to(device).eval()
     tokenizer = open_clip.get_tokenizer("ViT-B-32-quickgelu")
+    return model, tokenizer
+
+
+def clip_results(root, queries, top_k):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model, tokenizer = load_clip(device)
     with torch.inference_mode():
         vectors = model.encode_text(tokenizer(queries).to(device)).cpu().numpy().astype("float32")
     faiss.normalize_L2(vectors)
