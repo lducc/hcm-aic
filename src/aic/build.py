@@ -1,4 +1,4 @@
-﻿import csv
+import csv
 
 import faiss
 import numpy as np

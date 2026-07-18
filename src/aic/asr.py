@@ -3,6 +3,11 @@ import re
 import sqlite3
 
 
+def timestamp_seconds(value):
+    hours, minutes, seconds, milliseconds = map(int, value.split(":"))
+    return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000
+
+
 def transcribe_video(model, video_path, output_path):
     result = model.endless_decode(
         audio_path=str(video_path),
@@ -14,16 +19,10 @@ def transcribe_video(model, video_path, output_path):
     )
     segments = []
     for item in result:
-        start_hours, start_minutes, start_seconds, start_milliseconds = map(
-            int, item["start"].split(":")
-        )
-        end_hours, end_minutes, end_seconds, end_milliseconds = map(
-            int, item["end"].split(":")
-        )
         segments.append(
             {
-                "start": start_hours * 3600 + start_minutes * 60 + start_seconds + start_milliseconds / 1000,
-                "end": end_hours * 3600 + end_minutes * 60 + end_seconds + end_milliseconds / 1000,
+                "start": timestamp_seconds(item["start"]),
+                "end": timestamp_seconds(item["end"]),
                 "text": item["decode"],
             }
         )
