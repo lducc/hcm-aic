@@ -30,58 +30,47 @@ name = "aic"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "chunkformer" },
     { name = "faiss-cpu" },
+    { name = "google-genai" },
+    { name = "gradio" },
+    { name = "numba" },
     { name = "numpy" },
     { name = "open-clip-torch" },
     { name = "pillow" },
-    { name = "torch" },
-]
-
-[package.optional-dependencies]
-app = [
-    { name = "gradio" },
-]
-asr = [
-    { name = "chunkformer" },
-    { name = "numba" },
-]
-beit3 = [
+    { name = "pydantic" },
+    { name = "python-dotenv" },
     { name = "sentencepiece" },
     { name = "setuptools" },
     { name = "tensorboardx" },
     { name = "timm" },
+    { name = "torch" },
     { name = "torchmetrics" },
     { name = "torchscale" },
     { name = "transformers" },
 ]
-query = [
-    { name = "google-genai" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-]
 
 [package.metadata]
 requires-dist = [
-    { name = "chunkformer", marker = "extra == 'asr'" },
+    { name = "chunkformer" },
     { name = "faiss-cpu" },
-    { name = "google-genai", marker = "extra == 'query'" },
-    { name = "gradio", marker = "extra == 'app'" },
-    { name = "numba", marker = "extra == 'asr'", specifier = ">=0.59" },
+    { name = "google-genai" },
+    { name = "gradio" },
+    { name = "numba", specifier = ">=0.59" },
     { name = "numpy" },
     { name = "open-clip-torch" },
     { name = "pillow" },
-    { name = "pydantic", marker = "extra == 'query'" },
-    { name = "python-dotenv", marker = "extra == 'query'" },
-    { name = "sentencepiece", marker = "extra == 'beit3'" },
-    { name = "setuptools", marker = "extra == 'beit3'", specifier = "<81" },
-    { name = "tensorboardx", marker = "extra == 'beit3'" },
-    { name = "timm", marker = "extra == 'beit3'" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "sentencepiece" },
+    { name = "setuptools", specifier = "<81" },
+    { name = "tensorboardx" },
+    { name = "timm" },
     { name = "torch" },
-    { name = "torchmetrics", marker = "extra == 'beit3'", specifier = "==0.7.3" },
-    { name = "torchscale", marker = "extra == 'beit3'" },
-    { name = "transformers", marker = "extra == 'beit3'", specifier = "<5" },
+    { name = "torchmetrics", specifier = "==0.7.3" },
+    { name = "torchscale" },
+    { name = "transformers", specifier = "<5" },
 ]
-provides-extras = ["beit3", "asr", "query", "app"]
 
 [[package]]
 name = "annotated-doc"

@@ -7,26 +7,25 @@ name = "aic"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
+  "chunkformer",
   "faiss-cpu",
+  "google-genai",
+  "gradio",
+  "numba>=0.59",
   "numpy",
   "open-clip-torch",
   "pillow",
-  "torch",
-]
-
-[project.optional-dependencies]
-beit3 = [
+  "pydantic",
+  "python-dotenv",
   "sentencepiece",
   "setuptools<81",
-  "timm",
   "tensorboardX",
+  "timm",
+  "torch",
   "torchmetrics==0.7.3",
   "torchscale",
   "transformers<5",
 ]
-asr = ["chunkformer", "numba>=0.59"]
-query = ["google-genai", "pydantic", "python-dotenv"]
-app = ["gradio"]
 
 [project.scripts]
 aic = "aic.cli:main"
