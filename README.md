@@ -1,52 +1,52 @@
 # AIC KIS Baseline
 
-This project searches the HCMC AI Challenge 2025 video corpus. A text query returns
-ranked keyframes with a video ID, timestamp, source modalities, and keyframe path.
+Local multimodal search for the HCMC AI Challenge 2025 video corpus. A Vietnamese or
+English query returns ranked keyframes with a video ID, timestamp, available evidence,
+and a local frame path.
 
-## 1. Install Dependencies
+```text
+query
+  |- OpenAI CLIP ViT-B/32 -> clip.faiss
+  |- BEiT-3 Large 384    -> beit3.faiss
+  `- ChunkFormer ASR     -> asr.sqlite
+                                |
+                                `- reciprocal-rank fusion -> frames.csv -> results
+```
 
-Install the base environment for organizer CLIP search:
+`frames.csv` is the common catalog. It maps FAISS IDs to keyframes, video IDs, and
+timestamps, so visual and ASR results describe the same searchable moments.
+
+## Install Dependencies
+
+Install the complete student environment. This includes local search, BEiT-3 runtime,
+ChunkFormer ingestion, Gemini query enhancement, and Gradio. It does not download data,
+model checkpoints, or generated artifacts.
 
 ```bash
 uv sync
 ```
 
-Install every optional dependency for a full builder machine:
+## Prepare Data
 
-```bash
-uv sync --all-extras
+Set up one data root. The default is `data`; set `AIC_DATA` only when using a second
+bundle such as `data/l23`.
+
+```text
+data/
+  artifacts/
+    clip.faiss          # organizer CLIP index
+    beit3.faiss         # optional BEiT-3 index
+    asr.sqlite          # optional ASR index
+    frames.csv          # required catalog for both visual indexes
+  keyframes/keyframes/  # required to show result images
 ```
 
-This installs Python packages only. It does not download model checkpoints,
-organizer data, or shared search artifacts.
+Use matching files from one shared release. Do not combine an L23 index with a full
+Batch 1 `frames.csv`.
 
-Install an optional extra only when using that feature:
+### Build Organizer CLIP
 
-```bash
-uv sync --extra beit3  # BEiT-3 query encoder
-uv sync --extra query  # Gemini query enhancement
-uv sync --extra asr    # ChunkFormer transcription worker
-uv sync --extra app    # Gradio search interface
-```
-
-`--extra asr` is not required to search an existing `asr.sqlite` database.
-Teammates who only use the Gradio interface with shared artifacts need:
-
-```bash
-uv sync --extra app
-```
-
-## 2. Prepare Search Data
-
-The repository does not store videos, keyframes, embeddings, indexes, or model
-weights. Obtain them from organizer downloads, Colab, or the team's shared Drive folder.
-
-There are two valid workflows.
-
-### Data Builder
-
-Use this workflow when you have extracted organizer CLIP features, keyframes, and
-keyframe maps. Place them under:
+Run this only on a machine with extracted organizer features, keyframes, and mappings:
 
 ```text
 data/
@@ -55,84 +55,25 @@ data/
   map-keyframes/map-keyframes/
 ```
 
-Build the organizer CLIP search artifacts:
-
 ```bash
 uv run aic build
 ```
 
-The command validates feature/keyframe counts, maps each keyframe to its organizer
-timestamp, and writes:
+The command validates feature/keyframe counts, maps keyframe numbers to timestamps, and
+writes `artifacts/clip.faiss` and `artifacts/frames.csv`.
 
-```text
-data/artifacts/clip.faiss
-data/artifacts/frames.csv
-```
+For normal team use, download the prepared release instead. Raw videos, worker `.npy`
+files, and model weights are unnecessary unless that teammate is ingesting data.
 
-`clip.faiss` stores CLIP vectors. `frames.csv` is the shared frame catalog: it maps
-stable FAISS IDs to video IDs, timestamps, and keyframe paths. They must remain together.
-When later ingestion creates new frames, it appends them to this catalog instead of creating
-another model-specific CSV.
+## Configure Optional Models
 
-### Search User
+### BEiT-3 Large
 
-Use this workflow when another team member has already built the artifacts. Copy the
-shared files into:
+Download the [UniLM BEiT-3 source](https://github.com/microsoft/unilm/tree/master/beit3),
+the [Large COCO retrieval checkpoint](https://github.com/addf400/files/releases/download/beit3/beit3_large_patch16_384_coco_retrieval.pth),
+and the [SentencePiece tokenizer](https://github.com/addf400/files/releases/download/beit3/beit3.spm).
 
-```text
-data/
-  artifacts/
-    clip.faiss
-    frames.csv
-    beit3.faiss        # optional
-    asr.sqlite          # optional
-  keyframes/keyframes/ # required to open returned images
-```
-
-Do not run `aic build` when `clip.faiss` and `frames.csv` are already supplied.
-
-## 3. Run the CLI
-
-Search with all available modalities:
-
-```bash
-uv run aic search "a person riding a bicycle"
-```
-
-Select one modality or an explicit combination for inspection:
-
-```bash
-uv run aic search "cảnh sát giao thông" --only asr
-uv run aic search "a bicycle race" --only clip
-uv run --env-file .env aic search "a bicycle race" --only clip --only beit3
-```
-
-CLI options:
-
-| Option | Purpose |
-| --- | --- |
-| `--only clip` | Search the organizer CLIP index. |
-| `--only beit3` | Search the BEiT-3 index. |
-| `--only asr` | Search ChunkFormer transcripts. |
-| `--top-k 20` | Return this many final results. |
-| `--rerank` | Use nearby visual keyframes as additional support. |
-| `--enhance` | Generate English visual query rewrites with Gemini. |
-
-Without `--only`, search uses every artifact that is available. Repeating `--only`
-selects a combination.
-
-## 4. Configure Optional Models
-
-### BEiT-3 Large 384
-
-BEiT-3 requires its Python extra, an existing BEiT-3 index, and local model files.
-Install the extra with `uv sync --extra beit3`, then download:
-
-- [Microsoft UniLM BEiT-3 source](https://github.com/microsoft/unilm/tree/master/beit3)
-- [BEiT-3 Large COCO retrieval checkpoint](https://github.com/addf400/files/releases/download/beit3/beit3_large_patch16_384_coco_retrieval.pth)
-- [BEiT-3 SentencePiece tokenizer](https://github.com/addf400/files/releases/download/beit3/beit3.spm)
-
-Store them under `models/` and configure `.env`:
+Place them under `models/`, then copy `.env.example` to `.env` and set:
 
 ```dotenv
 AIC_BEIT3_HOME=/absolute/path/to/AIC/models/beit3
@@ -140,91 +81,54 @@ AIC_BEIT3_CHECKPOINT=/absolute/path/to/AIC/models/beit3_large_patch16_384_coco_r
 AIC_BEIT3_SPM=/absolute/path/to/AIC/models/beit3.spm
 ```
 
-`AIC_BEIT3_HOME` is the UniLM `beit3` directory containing
-`modeling_finetune.py` and `utils.py`. BEiT-3 is skipped automatically until the
-Large 384 checkpoint and matching `beit3.faiss` are available.
+BEiT-3 activates automatically only when these three values and a compatible
+`beit3.faiss` are available. Otherwise search continues with CLIP and ASR.
 
 ### Gemini Query Enhancement
 
-Install the query extra with `uv sync --extra query`. Add `GEMINI_API_KEY` to `.env`:
+Set `GEMINI_API_KEY` in `.env` to enable `--enhance`. It prints three English visual
+rewrites for CLIP and BEiT-3; ASR keeps the original query.
 
-```dotenv
-GEMINI_API_KEY=...
-```
-
-Run enhanced visual search:
+## Search
 
 ```bash
+uv run aic search "a person riding a bicycle"
+uv run aic search "cảnh sát giao thông" --only asr
+uv run --env-file .env aic search "a bicycle race" --only clip --only beit3 --rerank
 uv run --env-file .env aic search "Tìm cảnh đua xe đạp từ trên cao" --enhance
 ```
 
-The command prints three English visual rewrites for CLIP and BEiT-3. ASR always
-receives the original query.
+`--only` may be repeated to compare a single modality or a combination. `--rerank`
+adds support from nearby visual keyframes.
 
-## 5. Run the Search UI
-
-Install the app extra, then start the local Gradio interface:
+## Run the App
 
 ```bash
-uv sync --extra app
-uv run aic app
+uv run --env-file .env aic app
 ```
 
-The interface reuses the CLI search function. It keeps loaded visual models in
-memory while it runs, shows keyframes when local paths are available, and lists
-the video ID, timestamp, modalities, and fused score for every result.
+The Gradio app uses the same search function as the CLI and keeps models loaded while
+the process remains running.
 
-## 6. Run Colab Workers
+## Colab
 
-Use separate GPU Colab runtimes for visual embeddings and ASR. Both notebooks mount
-Drive, download organizer archives to `/content/work`, process one archive at a time,
-save resumable per-video output to Drive, then delete temporary archive data.
-
-### BEiT-3 Visual Worker
-
-Open [ingest_beit3.ipynb](notebooks/ingest_beit3.ipynb) in Colab and run all cells.
-It replaces the previous Base vectors once, then processes the listed L21-L30 keyframe
-archive shards and writes:
+The notebooks are standalone and use the shared Drive layout below. They do not clone
+this repository.
 
 ```text
-AIC_ARTIFACTS/beit3/L23_V001.npy
-...
-AIC_ARTIFACTS/beit3.faiss
-AIC_ARTIFACTS/frames.csv
+AIC_ARTIFACTS/
+  workers/beit3/        # resumable BEiT-3 .npy outputs
+  workers/asr/          # resumable ChunkFormer JSON outputs
+  releases/l23-v1/      # L23 BEiT-3 index and frames.csv
+  releases/full-v1/     # full Batch 1 indexes and frames.csv
 ```
 
-Existing per-video `.npy` files are skipped after a restart.
-`model.txt` in the `beit3` directory records the active model so resumed workers do not
-mix Base and Large vectors.
+- `ingest_beit3.ipynb` processes L23 keyframes and publishes `l23-v1/beit3.faiss` and
+  `l23-v1/frames.csv`.
+- `ingest_chunkformer.ipynb` reads `MyDrive/AIC2025/video_batch_1`, saves resumable
+  transcripts, and publishes `full-v1/asr.sqlite` after every Batch 1 video is done.
+- `build_full_release.ipynb` downloads organizer CLIP features to Colab SSD and writes
+  `full-v1/clip.faiss` next to the matching BEiT-3 index and catalog.
 
-### ChunkFormer ASR Worker
-
-Open [ingest_chunkformer.ipynb](notebooks/ingest_chunkformer.ipynb) in Colab and run
-all cells. It processes the listed L21-L30 video archive shards and writes:
-
-```text
-AIC_ARTIFACTS/asr/L23_V001.json
-...
-AIC_ARTIFACTS/asr.sqlite
-```
-
-Existing per-video transcript JSON files are skipped after a restart. ChunkFormer is
-licensed CC-BY-NC-4.0.
-
-Copy `beit3.faiss`, `frames.csv`, and `asr.sqlite` from Drive into local
-`data/artifacts/` when they are ready.
-
-## Retrieval Architecture
-
-```text
-text query
-  |- CLIP ViT-B/32 -> clip.faiss
-  |- BEiT-3 Large  -> beit3.faiss
-  `- ASR keywords  -> asr.sqlite
-                     |
-                     `- frames.csv + reciprocal-rank fusion -> ranked keyframes
-```
-
-CLIP and BEiT-3 use separate embedding spaces and indexes, but both return stable IDs
-from `frames.csv`. This lets an index cover a different subset of frames without a
-second metadata file. ASR hits are snapped to the nearest organizer keyframe before fusion.
+Copy a release into a local data root using the structure in **Prepare Data**. The
+ChunkFormer model is licensed CC-BY-NC-4.0; confirm that it is acceptable for your use.
