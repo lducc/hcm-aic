@@ -31,6 +31,15 @@ uv sync
 Set up one data root. The default is `data`; set `AIC_DATA` only when using a second
 bundle such as `data/l23`.
 
+### Shared Drive Data
+
+- [Organizer AIC 2025 data](https://drive.google.com/drive/folders/1eO4XpkeF0gq1J5P5-_N4TUMqQ_c9vn4R?usp=drive_link) contains the original ZIP archives: videos, keyframes, organizer CLIP vectors, and keyframe maps.
+- [Team processed artifacts](https://drive.google.com/drive/folders/1eD3UOK5QPu9mKe6Yabj9RHZNavcWsm7j?usp=sharing) contains resumable worker outputs and finished releases.
+
+The organizer archive is the source material. The processed-artifact Drive is what most
+teammates use for search. Do not download the complete organizer dataset just to run the
+app.
+
 ```text
 data/
   artifacts/
@@ -43,6 +52,41 @@ data/
 
 Use matching files from one shared release. Do not combine an L23 index with a full
 Batch 1 `frames.csv`.
+
+### L23 Example Bundle
+
+L23 is the small end-to-end example for local development. From the processed-artifact
+Drive, copy the matching `l23-v1` release files and L23 keyframes into:
+
+```text
+data/l23/
+  artifacts/
+    clip.faiss
+    beit3.faiss
+    asr.sqlite
+    frames.csv
+  keyframes/keyframes/L23_V001/
+  keyframes/keyframes/L23_V002/
+  ...
+```
+
+Source videos are optional for search. To inspect or play L23 source video later,
+download `Videos_L23_a.zip` from the organizer Drive and extract it under:
+
+```text
+data/l23/videos/L23_V001.mp4
+data/l23/videos/L23_V002.mp4
+...
+```
+
+Run the example bundle without affecting the default data root:
+
+```bash
+AIC_DATA=data/l23 uv run --env-file .env aic search "xe đạp" --top-k 10
+```
+
+Do not download `workers/beit3/*.npy` or `workers/asr/*.json` for normal search. They
+exist only so Colab ingestion can resume after a disconnect.
 
 ### Build Organizer CLIP
 
@@ -127,8 +171,6 @@ AIC_ARTIFACTS/
   `l23-v1/frames.csv`.
 - `ingest_chunkformer.ipynb` reads `MyDrive/AIC2025/video_batch_1`, saves resumable
   transcripts, and publishes `full-v1/asr.sqlite` after every Batch 1 video is done.
-- `build_full_release.ipynb` downloads organizer CLIP features to Colab SSD and writes
-  `full-v1/clip.faiss` next to the matching BEiT-3 index and catalog.
 
 Copy a release into a local data root using the structure in **Prepare Data**. The
 ChunkFormer model is licensed CC-BY-NC-4.0; confirm that it is acceptable for your use.
