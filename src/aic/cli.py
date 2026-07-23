@@ -16,7 +16,7 @@ def main():
     search_parser.add_argument("--top-k", type=int, default=20)
     search_parser.add_argument("--rerank", action="store_true")
     search_parser.add_argument("--enhance", action="store_true")
-    search_parser.add_argument("--only", choices=["clip", "beit3", "asr"], action="append")
+    search_parser.add_argument("--only", choices=["clip", "beit3", "asr", "ocr"], action="append")
     args = parser.parse_args()
     root = Path(os.environ.get("AIC_DATA", "data"))
 
