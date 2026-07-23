@@ -6,9 +6,10 @@ and a local frame path.
 
 ```text
 query
-  |- OpenAI CLIP ViT-B/32 -> clip.faiss
-  |- BEiT-3 Large 384    -> beit3.faiss
-  `- ChunkFormer ASR     -> asr.sqlite
+  |- OpenAI CLIP ViT-B/32   -> clip.faiss
+  |- BEiT-3 Large 384      -> beit3.faiss
+  |- ChunkFormer ASR       -> asr.sqlite
+  `- PaddleOCR / Tesseract -> ocr.sqlite
                                 |
                                 `- reciprocal-rank fusion -> frames.csv -> results
 ```
@@ -46,6 +47,7 @@ data/
     clip.faiss          # organizer CLIP index
     beit3.faiss         # optional BEiT-3 index
     asr.sqlite          # optional ASR index
+    ocr.sqlite          # optional OCR index (on-frame text)
     frames.csv          # required catalog for both visual indexes
   keyframes/keyframes/  # required to show result images
 ```
@@ -64,6 +66,7 @@ data/l23/
     clip.faiss
     beit3.faiss
     asr.sqlite
+    ocr.sqlite
     frames.csv
   keyframes/keyframes/L23_V001/
   keyframes/keyframes/L23_V002/
@@ -85,8 +88,8 @@ Run the example bundle without affecting the default data root:
 AIC_DATA=data/l23 uv run --env-file .env aic search "xe đạp" --top-k 10
 ```
 
-Do not download `workers/beit3/*.npy` or `workers/asr/*.json` for normal search. They
-exist only so Colab ingestion can resume after a disconnect.
+Do not download `workers/beit3/*.npy`, `workers/asr/*.json`, or `workers/ocr/*.json` for
+normal search. They exist only so Colab ingestion can resume after a disconnect.
 
 ### Build Organizer CLIP
 
@@ -131,13 +134,37 @@ BEiT-3 activates automatically only when these three values and a compatible
 ### Gemini Query Enhancement
 
 Set `GEMINI_API_KEY` in `.env` to enable `--enhance`. It prints three English visual
-rewrites for CLIP and BEiT-3; ASR keeps the original query.
+rewrites for CLIP and BEiT-3; ASR and OCR keep the original query.
+
+### OCR (On-Frame Text)
+
+OCR reads text burned into keyframes (captions, signs, scoreboards, chyrons) and
+indexes it the same way ASR indexes speech: an FTS5 `ocr.sqlite` table fused into
+search via reciprocal-rank fusion. It activates automatically once `artifacts/ocr.sqlite`
+exists; no runtime configuration is required to search it.
+
+Two engines are supported for building the index, selected with `AIC_OCR_ENGINE` in `.env`:
+
+```dotenv
+AIC_OCR_ENGINE=paddleocr   # default; better on Vietnamese and cluttered scene text
+AIC_OCR_LANG=vi            # paddleocr lang code, or e.g. vie+eng for tesseract
+```
+
+- `paddleocr` installs entirely through `uv sync` (via `paddleocr`/`paddlepaddle`) and is
+  the recommended default for this corpus.
+- `tesseract` is a lighter CPU-only fallback but requires the system `tesseract` binary
+  and the Vietnamese language pack installed separately (e.g. `brew install tesseract
+  tesseract-lang` or `apt install tesseract-ocr tesseract-ocr-vie`), plus `AIC_OCR_ENGINE=tesseract`.
+
+For normal team use, download a release's `ocr.sqlite` like the other artifacts instead
+of running OCR locally.
 
 ## Search
 
 ```bash
 uv run aic search "a person riding a bicycle"
 uv run aic search "cảnh sát giao thông" --only asr
+uv run aic search "biển số xe" --only ocr
 uv run --env-file .env aic search "a bicycle race" --only clip --only beit3 --rerank
 uv run --env-file .env aic search "Tìm cảnh đua xe đạp từ trên cao" --enhance
 ```
@@ -163,6 +190,7 @@ this repository.
 AIC_ARTIFACTS/
   workers/beit3/        # resumable BEiT-3 .npy outputs
   workers/asr/          # resumable ChunkFormer JSON outputs
+  workers/ocr/          # resumable OCR JSON outputs
   releases/l23-v1/      # L23 BEiT-3 index and frames.csv
   releases/full-v1/     # full Batch 1 indexes and frames.csv
 ```
@@ -171,6 +199,8 @@ AIC_ARTIFACTS/
   `l23-v1/frames.csv`.
 - `ingest_chunkformer.ipynb` reads `MyDrive/AIC2025/video_batch_1`, saves resumable
   transcripts, and publishes `full-v1/asr.sqlite` after every Batch 1 video is done.
+- `ingest_ocr.ipynb` runs PaddleOCR over L23 keyframes, saves resumable per-video JSON,
+  and publishes `l23-v1/ocr.sqlite`.
 
 Copy a release into a local data root using the structure in **Prepare Data**. The
 ChunkFormer model is licensed CC-BY-NC-4.0; confirm that it is acceptable for your use.
