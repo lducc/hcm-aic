@@ -164,7 +164,7 @@ def search(root, query, top_k, rerank=False, enhance=False, visual_queries=None,
         visual_queries = rewrite(query)
     candidate_k = max(50, 5 * top_k)
     lists = []
-    selected = modalities or ["clip", "beit3", "asr"]
+    selected = modalities or ["clip", "beit3", "asr", "ocr"]
     if "clip" in selected and (root / "artifacts" / "clip.faiss").exists() and (root / "artifacts" / "frames.csv").exists():
         lists.append(clip_results(root, visual_queries, candidate_k))
     beit3_index = root / "artifacts" / "beit3.faiss"
@@ -187,6 +187,10 @@ def search(root, query, top_k, rerank=False, enhance=False, visual_queries=None,
         from aic.asr import search_asr
 
         lists.append(snap_asr_results(root, search_asr(root, query, candidate_k)))
+    if "ocr" in selected and (root / "artifacts" / "ocr.sqlite").exists():
+        from aic.ocr import search_ocr
+
+        lists.append(search_ocr(root, query, candidate_k))
     results = merge_results(lists, candidate_k)
     if rerank:
         rerank_neighbors(results)
